@@ -1,0 +1,12 @@
+
+1 - feito o login
+2 - feito o banco de dados  
+3 - feito o docker
+4 - feito o add eventos
+5 - fazer o get eventos ------------------------
+6 - adicionando filtros de busca nos eventos frontend feito
+7 - adicionar novos campos no backend -----------------------
+8 -
+9 -
+10 -
+11 -

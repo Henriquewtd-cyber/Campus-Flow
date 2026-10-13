@@ -1,6 +1,6 @@
 
 from sqlalchemy.orm import Session
-from app.models.database_models import Evento
+from app.db.database_models import Evento
 from app.db.database import SessionLocal
 from fastapi import HTTPException, status
 

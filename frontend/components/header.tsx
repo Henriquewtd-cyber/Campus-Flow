@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { Bell, User, Calendar, DollarSign } from "lucide-react"
+import { Bell, User, Calendar, DollarSign, Newspaper, LayoutDashboard, Monitor } from "lucide-react"
 import { usePathname } from 'next/navigation'
 
 export function Header() {
@@ -20,66 +20,96 @@ export function Header() {
     if (!showHeader) return null
 
     return (
-        <header className="bg-white border-b border-slate-200 px-6 py-4 select-none">
-            <div className="flex items-center justify-between">
+        <header className="bg-white border-b border-slate-200/80 px-4 md:px-8 py-3.5 select-none sticky top-0 z-40 shadow-xs">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
 
-                {/* LOGO — opção C */}
-                <div className="flex items-center gap-3.5">
-                    {/* Barra accent vertical */}
-                    <div className="w-1 h-11 rounded-full bg-blue-600 shrink-0" />
-
-                    {/* Ícone SVG */}
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <circle cx="9" cy="7" r="3" fill="#1e40af" />
-                            <path
-                                d="M3 19c0-3.314 2.686-6 6-6s6 2.686 6 6"
-                                stroke="#1e40af"
-                                strokeWidth="1.8"
-                                strokeLinecap="round"
-                            />
-                            <circle cx="17" cy="9" r="2.2" fill="#60a5fa" />
-                            <path
-                                d="M14.5 19c0-2.485 1.567-4.5 3.5-4.5s3.5 2.015 3.5 4.5"
-                                stroke="#60a5fa"
-                                strokeWidth="1.6"
-                                strokeLinecap="round"
-                            />
+                {/* LOGO & INSTITUTIONAL TITLE */}
+                <Link href="/eventos" className="flex items-center gap-3.5 group text-left">
+                    <div className="w-10 h-10 rounded-lg bg-blue-900 flex items-center justify-center text-white font-bold shadow-xs shrink-0 group-hover:bg-blue-800 transition-colors">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                            <path d="M6 6h10" />
+                            <path d="M6 10h10" />
                         </svg>
                     </div>
 
-                    {/* Textos */}
                     <div className="leading-tight">
-                        <h1 className="text-[15px] font-bold text-slate-800 tracking-tight leading-none">
-                            ClientManager
+                        <h1 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                            CampusFlow
+                            <span className="text-[10px] uppercase font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200/60">
+                                IME-USP
+                            </span>
                         </h1>
-                        <p className="text-[10px] font-medium text-slate-400 tracking-widest uppercase mt-1">
-                            Gestão de Clientes
+                        <p className="text-[11px] font-medium text-slate-500 tracking-wide">
+                            Portal Institucional de Comunicação
                         </p>
                     </div>
-                </div>
+                </Link>
 
-                {/* Ícones da direita */}
-                <div className="flex items-center space-x-4">
-                    <button className="bg-transparent hover:bg-slate-200">
-                        <Bell className="w-5 h-5 text-slate-700" />
+                {/* CENTER NAVIGATION LINKS */}
+                <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-lg border border-slate-200/60 text-xs font-medium text-slate-600">
+                    <Link
+                        href="/eventos"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                            pathname === "/eventos"
+                                ? "bg-white text-blue-900 shadow-xs font-semibold"
+                                : "hover:text-slate-900 hover:bg-slate-200/50"
+                        }`}
+                    >
+                        <Newspaper className="w-3.5 h-3.5" />
+                        <span>Notícias</span>
+                    </Link>
+                    <Link
+                        href="/add_evento"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                            pathname.startsWith("/add_evento")
+                                ? "bg-white text-blue-900 shadow-xs font-semibold"
+                                : "hover:text-slate-900 hover:bg-slate-200/50"
+                        }`}
+                    >
+                        <LayoutDashboard className="w-3.5 h-3.5" />
+                        <span>Gestão</span>
+                    </Link>
+                    <Link
+                        href="/slides"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
+                            pathname === "/slides"
+                                ? "bg-white text-blue-900 shadow-xs font-semibold"
+                                : "hover:text-slate-900 hover:bg-slate-200/50"
+                        }`}
+                    >
+                        <Monitor className="w-3.5 h-3.5" />
+                        <span>Painel TV</span>
+                    </Link>
+                </nav>
+
+                {/* RIGHT ACTION BUTTONS */}
+                <div className="flex items-center space-x-1.5">
+                    <button
+                        title="Notificações"
+                        className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                    >
+                        <Bell className="w-4 h-4" />
                     </button>
 
-                    <Link href="/schedule">
-                        <button className="bg-transparent hover:bg-slate-200">
-                            <Calendar className="w-5 h-5 text-slate-700" />
+                    <Link href="/schedule" title="Agenda">
+                        <button className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                            <Calendar className="w-4 h-4" />
                         </button>
                     </Link>
 
-                    <Link href="/finance">
-                        <button className="bg-transparent hover:bg-slate-200">
-                            <DollarSign className="w-5 h-5 text-slate-700" />
+                    <Link href="/finance" title="Recursos">
+                        <button className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+                            <DollarSign className="w-4 h-4" />
                         </button>
                     </Link>
+
+                    <div className="h-4 w-px bg-slate-200 mx-1" />
 
                     <Link href="/login">
-                        <button className="bg-transparent hover:bg-slate-200">
-                            <User className="w-5 h-5 text-slate-700" />
+                        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-900 text-white hover:bg-blue-800 transition-all shadow-xs">
+                            <User className="w-3.5 h-3.5" />
+                            <span>Acesso Restrito</span>
                         </button>
                     </Link>
                 </div>
@@ -87,4 +117,4 @@ export function Header() {
             </div>
         </header>
     )
-}
+}

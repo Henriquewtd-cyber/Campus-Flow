@@ -1,13 +1,30 @@
 services:
   api:
-    build: .
+    build:
+      context: ./backend
     ports:
       - "8000:8000"
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      API_URL: http://api:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    command: npm run dev -- --hostname 0.0.0.0
+    depends_on:
+      - api
 
   db:
     image: postgres:16
@@ -17,7 +34,6 @@ services:
       POSTGRES_DB: meu_banco
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - .:/app
     ports:
       - "5433:5432"
     healthcheck:
@@ -28,4 +44,3 @@ services:
 
 volumes:
   pgdata:
-

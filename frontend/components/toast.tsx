@@ -13,21 +13,24 @@ interface Toast {
 
 const toastConfig = {
     success: {
-        bgColor: "bg-green-50",
-        borderColor: "border-green-200",
-        textColor: "text-green-800",
+        bgColor: "bg-emerald-50/95",
+        borderColor: "border-emerald-200",
+        textColor: "text-emerald-900",
+        iconColor: "text-emerald-600",
         icon: CheckCircle,
     },
     error: {
-        bgColor: "bg-red-50",
-        borderColor: "border-red-200",
-        textColor: "text-red-800",
+        bgColor: "bg-rose-50/95",
+        borderColor: "border-rose-200",
+        textColor: "text-rose-900",
+        iconColor: "text-rose-600",
         icon: AlertCircle,
     },
     info: {
-        bgColor: "bg-blue-50",
-        borderColor: "border-blue-200",
-        textColor: "text-blue-800",
+        bgColor: "bg-slate-900/95",
+        borderColor: "border-slate-800",
+        textColor: "text-slate-100",
+        iconColor: "text-blue-400",
         icon: Info,
     },
 }
@@ -39,7 +42,7 @@ interface ToastProps {
 
 export function ToastContainer({ toasts, removeToast }: ToastProps) {
     return (
-        <div className="fixed top-4 right-4 z-50 space-y-2">
+        <div className="fixed top-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none">
             {toasts.map((toast) => {
                 const config = toastConfig[toast.type]
                 const Icon = config.icon
@@ -47,18 +50,19 @@ export function ToastContainer({ toasts, removeToast }: ToastProps) {
                 return (
                     <div
                         key={toast.id}
-                        className={`${config.bgColor} ${config.borderColor} ${config.textColor} border rounded-lg p-4 shadow-lg max-w-sm animate-in fade-in slide-in-from-top-2 duration-300`}
+                        className={`${config.bgColor} ${config.borderColor} ${config.textColor} border rounded-xl p-3.5 shadow-md max-w-sm w-full pointer-events-auto backdrop-blur-xs flex items-center justify-between gap-3 transition-all duration-200`}
                     >
-                        <div className="flex items-center gap-3">
-                            <Icon className="w-5 h-5 shrink-0" />
-                            <p className="flex-1 text-sm font-medium">{toast.message}</p>
-                            <button
-                                onClick={() => removeToast(toast.id)}
-                                className="text-current opacity-70 hover:opacity-100"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                        <div className="flex items-center gap-3 min-w-0">
+                            <Icon className={`w-4 h-4 shrink-0 ${config.iconColor}`} />
+                            <p className="text-xs font-semibold leading-snug truncate">{toast.message}</p>
                         </div>
+                        <button
+                            onClick={() => removeToast(toast.id)}
+                            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-md transition-colors shrink-0"
+                            title="Fechar"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
                     </div>
                 )
             })}
@@ -85,4 +89,4 @@ export function useToast() {
     }
 
     return { toasts, addToast, removeToast }
-}
+}

@@ -6,7 +6,9 @@
 5 - fazer o get eventos ------------------------
 6 - adicionando filtros de busca nos eventos frontend feito
 7 - adicionar novos campos no backend -----------------------
-8 -
-9 -
-10 -
-11 -
+ --------------***-------------------------
+8 - arrumar todo o frontend. middleware arrumado.
+9 - arruamndo login e db. ao fazer login o midlleware continua barrando. feito
+10 - arrumando midlleware no backend e talalalçsdçla
+11 - midlleware e autho rodando. tudo no docker
+12 - fazer a rota de eventos completa

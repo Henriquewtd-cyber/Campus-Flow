@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { getCurrentUser } from "./app/utils";
 
-type JWTPayload = {
-    sub: string;
-    role: "admin" | "user";
-};
 
 export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
@@ -19,23 +15,30 @@ export async function middleware(request: NextRequest) {
         "/slides",
     ];
 
-    if (publicRoutes.some(route => pathname.startsWith(route))) {
+    const isPublicRoute =
+        pathname === "/" ||
+        publicRoutes
+            .filter(route => route !== "/")
+            .some(route =>
+                pathname === route || pathname.startsWith(`${route}/`)
+            );
+
+    if (isPublicRoute) {
         return NextResponse.next();
     }
 
-    const token = request.cookies.get("session")?.value;
-
-    if (!token) {
-        return NextResponse.redirect(new URL("/login", request.url));
-    }
-
     try {
-        const { payload } = await jwtVerify(
-            token,
-            new TextEncoder().encode(process.env.SECRET_KEY!)
-        );
+        const user = await getCurrentUser();
 
-        const role = (payload as JWTPayload).role;
+        console.log("Role do usuário:", user);
+
+        if (!user) {
+            return NextResponse.redirect(new URL("/login", request.url));
+        }
+
+        if (!user.role) {
+            return NextResponse.redirect(new URL("/login", request.url));
+        }
 
         const adminRoutes = [
             "/add_evento",
@@ -47,7 +50,7 @@ export async function middleware(request: NextRequest) {
             pathname.startsWith(route)
         );
 
-        if (isAdminRoute && role !== "admin") {
+        if (isAdminRoute && user.role !== "admin") {
             return NextResponse.redirect(new URL("/login", request.url));
         }
 

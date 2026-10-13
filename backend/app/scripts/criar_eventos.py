@@ -1,7 +1,7 @@
 
 # scripts/criar_eventos.py
 from app.db.database import SessionLocal
-from app.models.database_models import Evento
+from app.db.database_models import Evento
 
 db = SessionLocal()
 evento = Evento(

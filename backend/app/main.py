@@ -2,10 +2,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from app.db.database import Base, engine
-from app.models.database_models import Usuario, Evento
+from app.db.database_models import Usuario, Evento
 
-from app.routes.user import router as users_router
-from app.routes.event import router as events_router
+from app.auth.user_router import router as users_router
+from app.events.event_router import router as events_router
 
 from fastapi.middleware.cors import CORSMiddleware
 

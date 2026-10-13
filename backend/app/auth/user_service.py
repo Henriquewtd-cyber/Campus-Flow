@@ -1,12 +1,15 @@
 
+import token
+
 from sqlalchemy.orm import Session
-from app.models.database_models import Usuario
+from app.db.database_models import Usuario
 from app.core.security import verify_password, create_access_token
 from app.db.database import SessionLocal
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 
 async def get_user(email: str, password: str):
-    
+    print(f"Fetching user with email: {email}")
     try:
         db = SessionLocal()
 
@@ -23,6 +26,8 @@ async def get_user(email: str, password: str):
     finally:
         db.close()
 
+    print(f"User fetched from database: {user}")
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -35,16 +40,34 @@ async def get_user(email: str, password: str):
             detail="Invalid credentials"
         )
 
-    token = create_access_token({"sub": user.email, "role": user.role})
+    token = create_access_token({
+    "sub": user.email,
+    "role": user.role,
+    "name": user.name,
+    "id": user.id
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
+    })
+
+    response = JSONResponse({
         "user": {
             "id": user.id,
             "email": user.email,
+            "role": user.role,
             "name": user.name,
-            "role": user.role
         }
-    }
+    })
+
+    
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        path="/"
+    )
+
+    return response
+    
     

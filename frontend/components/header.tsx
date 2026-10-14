@@ -50,33 +50,30 @@ export function Header() {
                 <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-lg border border-slate-200/60 text-xs font-medium text-slate-600">
                     <Link
                         href="/eventos"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-                            pathname === "/eventos"
-                                ? "bg-white text-blue-900 shadow-xs font-semibold"
-                                : "hover:text-slate-900 hover:bg-slate-200/50"
-                        }`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${pathname === "/eventos"
+                            ? "bg-white text-blue-900 shadow-xs font-semibold"
+                            : "hover:text-slate-900 hover:bg-slate-200/50"
+                            }`}
                     >
                         <Newspaper className="w-3.5 h-3.5" />
                         <span>Notícias</span>
                     </Link>
                     <Link
-                        href="/add_evento"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-                            pathname.startsWith("/add_evento")
-                                ? "bg-white text-blue-900 shadow-xs font-semibold"
-                                : "hover:text-slate-900 hover:bg-slate-200/50"
-                        }`}
+                        href="/editar"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${pathname.startsWith("/editar")
+                            ? "bg-white text-blue-900 shadow-xs font-semibold"
+                            : "hover:text-slate-900 hover:bg-slate-200/50"
+                            }`}
                     >
                         <LayoutDashboard className="w-3.5 h-3.5" />
                         <span>Gestão</span>
                     </Link>
                     <Link
                         href="/slides"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${
-                            pathname === "/slides"
-                                ? "bg-white text-blue-900 shadow-xs font-semibold"
-                                : "hover:text-slate-900 hover:bg-slate-200/50"
-                        }`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all ${pathname === "/slides"
+                            ? "bg-white text-blue-900 shadow-xs font-semibold"
+                            : "hover:text-slate-900 hover:bg-slate-200/50"
+                            }`}
                     >
                         <Monitor className="w-3.5 h-3.5" />
                         <span>Painel TV</span>
@@ -85,26 +82,7 @@ export function Header() {
 
                 {/* RIGHT ACTION BUTTONS */}
                 <div className="flex items-center space-x-1.5">
-                    <button
-                        title="Notificações"
-                        className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                    >
-                        <Bell className="w-4 h-4" />
-                    </button>
 
-                    <Link href="/schedule" title="Agenda">
-                        <button className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
-                            <Calendar className="w-4 h-4" />
-                        </button>
-                    </Link>
-
-                    <Link href="/finance" title="Recursos">
-                        <button className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
-                            <DollarSign className="w-4 h-4" />
-                        </button>
-                    </Link>
-
-                    <div className="h-4 w-px bg-slate-200 mx-1" />
 
                     <Link href="/login">
                         <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-900 text-white hover:bg-blue-800 transition-all shadow-xs">
@@ -117,4 +95,4 @@ export function Header() {
             </div>
         </header>
     )
-}
+}

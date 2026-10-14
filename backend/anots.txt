@@ -11,4 +11,5 @@
 9 - arruamndo login e db. ao fazer login o midlleware continua barrando. feito
 10 - arrumando midlleware no backend e talalalçsdçla
 11 - midlleware e autho rodando. tudo no docker
-12 - fazer a rota de eventos completa
+12 - fazer a rota de eventos completa - feito
+13- fazer o get slides

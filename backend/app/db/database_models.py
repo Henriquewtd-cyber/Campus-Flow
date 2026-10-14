@@ -1,6 +1,7 @@
 
 
 from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.dialects.postgresql import JSONB
 from app.db.database import Base
 
 class Usuario(Base):
@@ -14,9 +15,10 @@ class Usuario(Base):
 
 
 class Evento(Base):
-    # modelo de evento para o banco de dados, usando SQLAlchemy
     __tablename__ = "eventos"
-    id = Column(Integer, primary_key=True)
+
+    id = Column(Integer, primary_key=True, index=True)
+
     dataInicio = Column(String(20))
     dataFim = Column(String(20), nullable=True)
     destaque = Column(Boolean)
@@ -25,8 +27,13 @@ class Evento(Base):
     horaInicio = Column(String(10), nullable=True)
     link = Column(String(255), nullable=True)
     local = Column(String(255), nullable=True)
-    subtitulo = Column(String(255),  nullable=True)
+    subtitulo = Column(String(255), nullable=True)
     textoTicker = Column(String(255), nullable=True)
     ticker = Column(Boolean)
     tipo = Column(String(100))
     titulo = Column(String(255))
+
+    tags = Column(JSONB, nullable=False, default=list)
+    publicos = Column(JSONB, nullable=False, default=list)
+    areas = Column(JSONB, nullable=False, default=list)
+    categorias = Column(JSONB, nullable=False, default=list)

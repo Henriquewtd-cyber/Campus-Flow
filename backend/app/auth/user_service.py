@@ -9,7 +9,6 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 
 async def get_user(email: str, password: str):
-    print(f"Fetching user with email: {email}")
     try:
         db = SessionLocal()
 

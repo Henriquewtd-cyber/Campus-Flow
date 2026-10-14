@@ -53,7 +53,29 @@ type Noticia = {
     glow: string;
 };
 
+// Formato devolvido pelo backend (model Event)
+type EventApi = {
+    id: number | null;
+    dataInicio: string;
+    dataFim: string | null;
+    fonte: string;
+    horaInicio: string | null;
+    horaFim: string | null;
+    link: string | null;
+    local: string | null;
+    subtitulo: string | null;
+    textoTicker: string | null;
+    tipo: string;
+    titulo: string;
+    tags: string[];
+    publicos: string[];
+    areas: string[];
+    categorias: string[];
+};
+
 // ─── DATA & BRAND SYSTEM ──────────────────────────────────────────────────────
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const TAG_CONFIG: Record<Tag, { accent: string; bg: string; border: string; icon: any }> = {
     "EVENTO": { accent: "#1e40af", bg: "#eff6ff", border: "#bfdbfe", icon: Calendar },
@@ -86,107 +108,67 @@ const ALL_AREAS: Area[] = ["Todos", "MAC", "MAE", "MAT", "LIC", "MAP"];
 const ALL_CATEGORIAS: Categoria[] = ["Todas", "Curso", "Vagas", "Projeto", "Bolsa"];
 const ALL_DATE_RANGES: DateRange[] = ["Todos", "Últimos 7 dias", "Últimos 10 dias", "Últimos 30 dias"];
 
-const now = new Date();
-const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000);
+const DATE_RANGE_DAYS: Record<DateRange, number | null> = {
+    "Todos": null,
+    "Últimos 7 dias": 7,
+    "Últimos 10 dias": 10,
+    "Últimos 30 dias": 30,
+};
 
-const noticias: Noticia[] = [
-    {
-        id: 1, tag: "EVENTO", publico: ["Graduação", "Pós-Graduação"],
-        area: ["MAC", "MAT"], categoria: "Curso",
-        title: "Semana Acadêmica de Tecnologia",
-        subtitle: "Palestras, workshops e networking com profissionais do mercado de tecnologia",
-        date: "05 de Maio, 2025", rawDate: daysAgo(2), time: "08h00 – 18h00",
-        local: "Auditório Principal — Bloco A",
-        source: "Coordenação de Tecnologia da Informação",
-        link: "https://exemplo.edu.br/semana-tec",
-        body: "A Semana Acadêmica de Tecnologia é um evento anual que reúne estudantes, professores e profissionais do mercado para discutir as tendências e inovações da área. Nesta edição, contaremos com mais de 20 palestras, 8 workshops práticos e uma feira de estágios com empresas parceiras.\n\nOs temas abordados incluem: Inteligência Artificial, Cloud Computing, Segurança da Informação, DevOps e muito mais. As inscrições para os workshops são limitadas e devem ser feitas pelo Portal do Aluno.\n\nParticipantes receberão certificado de horas complementares após confirmação de presença.",
-        accent: "#1e40af", glow: "transparent",
-    },
-    {
-        id: 2, tag: "AVISO", publico: ["Graduação"],
-        area: ["LIC", "MAE"], categoria: "Curso",
-        title: "Rematrícula — 1º Semestre 2026",
-        subtitle: "Período de rematrícula online para todos os cursos de graduação presencial",
-        date: "10 a 20 de Maio, 2025", rawDate: daysAgo(5), time: "Disponível 24 horas",
-        local: "Portal do Aluno — sistema.edu.br",
-        source: "Secretaria Acadêmica",
-        link: "https://exemplo.edu.br/rematricula",
-        body: "O período de rematrícula para o 1º semestre de 2026 estará disponível das 00h00 do dia 10/05 até as 23h59 do dia 20/05 exclusivamente pelo Portal do Aluno.\n\nAtenção: alunos com pendências financeiras ou documentais não poderão realizar a rematrícula até regularização da situação junto à Secretaria Acadêmica. O não cumprimento do prazo implica em trancamento automático.\n\nEm caso de dúvidas, entre em contato com a Secretaria pelo e-mail secretaria@exemplo.edu.br ou compareça presencialmente no Bloco B, sala 102.",
-        accent: "#b91c1c", glow: "transparent",
-    },
-    {
-        id: 3, tag: "PALESTRA", publico: ["Graduação", "Pós-Graduação", "Docentes"],
-        area: ["MAP", "MAT"], categoria: "Projeto",
-        title: "Inteligência Artificial na Saúde",
-        subtitle: "Como modelos preditivos estão transformando diagnósticos e tratamentos modernos",
-        date: "12 de Maio, 2025", rawDate: daysAgo(4), time: "19h00 – 21h00",
-        local: "Sala de Conferências — Bloco C",
-        source: "Departamento de Ciências da Saúde",
-        link: "https://exemplo.edu.br/ia-saude",
-        body: "A palestra contará com a presença da Dra. Ana Luiza Ferreira, pesquisadora do Hospital Albert Einstein e referência nacional em aplicações de machine learning para diagnóstico clínico.\n\nSerão abordados casos reais de uso de IA no diagnóstico de câncer por imagem, predição de sepse em UTIs e personalização de tratamentos oncológicos. O evento é aberto a toda a comunidade acadêmica.\n\nInscrições gratuitas mas obrigatórias pelo link do evento. Vagas limitadas a 80 participantes presenciais. A palestra também será transmitida ao vivo pelo canal institucional no YouTube.",
-        accent: "#047857", glow: "transparent",
-    },
-    {
-        id: 4, tag: "NOTÍCIA", publico: ["Todos"],
-        area: ["MAC", "MAE", "MAT", "LIC", "MAP"], categoria: "Projeto",
-        title: "Alunos vencem hackathon nacional de inovação",
-        subtitle: "Equipe do curso de Engenharia de Software conquista 1º lugar com solução de acessibilidade",
-        date: "28 de Abril, 2025", rawDate: daysAgo(18), time: "",
-        local: "São Paulo — SP",
-        source: "Assessoria de Comunicação",
-        link: "https://exemplo.edu.br/hackathon",
-        body: "A equipe FormateAI, composta pelos alunos Lucas Mendes, Beatriz Costa e Rafael Teixeira do 5º período de Engenharia de Software, conquistou o 1º lugar no HackBrasil 2025, maior hackathon de inovação do país.\n\nO projeto desenvolvido, batizado de AccessPath, utiliza visão computacional para auxiliar pessoas com deficiência visual a navegar em ambientes internos de forma autônoma. A solução foi desenvolvida em 48 horas e impressionou os juízes pela robustez técnica e impacto social.\n\nA premiação incluiu R$ 50.000 em dinheiro, aceleração na AWS e mentorias com executivos de grandes empresas de tecnologia.",
-        accent: "#b45309", glow: "transparent",
-    },
-    {
-        id: 5, tag: "EVENTO", publico: ["Graduação", "Técnicos"],
-        area: ["LIC", "MAP"], categoria: "Vagas",
-        title: "Feira de Profissões 2025",
-        subtitle: "Encontre oportunidades de estágio e emprego com mais de 40 empresas parceiras",
-        date: "15 de Maio, 2025", rawDate: daysAgo(1), time: "10h00 – 17h00",
-        local: "Ginásio Poliesportivo — Campus Central",
-        source: "Escritório de Carreiras",
-        link: "https://exemplo.edu.br/feira",
-        body: "A Feira de Profissões é o maior evento de empregabilidade do instituto, reunindo mais de 40 empresas de diferentes setores para apresentar oportunidades de estágio, trainee e emprego.\n\nEste ano, contaremos com workshops de currículo e LinkedIn, simulações de entrevista com profissionais de RH e uma área exclusiva para startups da região. Traga seu currículo impresso e atualizado.\n\nAs empresas confirmadas incluem representantes dos setores de tecnologia, saúde, finanças, engenharia e educação. A entrada é gratuita para toda a comunidade acadêmica com apresentação da carteirinha estudantil.",
-        accent: "#1e40af", glow: "transparent",
-    },
-    {
-        id: 6, tag: "AVISO", publico: ["Docentes", "Técnicos"],
-        area: ["MAC", "MAT"], categoria: "Vagas",
-        title: "Atualização do Sistema de Ponto Eletrônico",
-        subtitle: "Nova versão do sistema entra em vigor a partir de 1º de Junho de 2025",
-        date: "08 de Maio, 2025", rawDate: daysAgo(8), time: "",
-        local: "Portal RH — rh.exemplo.edu.br",
-        source: "Departamento de Recursos Humanos",
-        link: "https://exemplo.edu.br/ponto",
-        body: "Informamos que o sistema de ponto eletrônico será atualizado a partir do dia 1º de junho de 2025. A nova versão contará com autenticação biométrica via aplicativo mobile, histórico completo de registros e funcionalidade de justificativa de ausências online.\n\nTodos os servidores deverão instalar o novo aplicativo ePonto Institucional (disponível para iOS e Android) e realizar o cadastro biométrico até o dia 25/05 nas estações de cadastramento instaladas no RH e no Bloco Administrativo.\n\nO sistema legado continuará operacional em paralelo até 30/06. Dúvidas pelo e-mail rh@exemplo.edu.br.",
-        accent: "#b91c1c", glow: "transparent",
-    },
-    {
-        id: 7, tag: "PALESTRA", publico: ["Pós-Graduação", "Docentes"],
-        area: ["MAE", "LIC"], categoria: "Bolsa",
-        title: "Metodologias de Pesquisa Aplicada",
-        subtitle: "Seminário sobre métodos qualitativos e quantitativos para dissertações e teses",
-        date: "20 de Maio, 2025", rawDate: daysAgo(3), time: "14h00 – 17h00",
-        local: "Biblioteca Central — Sala de Estudos Coletivos",
-        source: "Programa de Pós-Graduação",
-        link: "https://exemplo.edu.br/pesquisa",
-        body: "O seminário abordará as principais metodologias de pesquisa científica aplicadas a dissertações de mestrado e teses de doutorado, com foco prático em como escolher e justificar o método mais adequado para cada objeto de estudo.\n\nOs palestrantes são o Prof. Dr. Marcos Antônio Silva (UFSP) e a Profa. Dra. Cláudia Rocha (Unicamp), ambos com extensa experiência na orientação de pesquisas de pós-graduação nas áreas de ciências humanas, exatas e biológicas.\n\nEvento voltado principalmente a alunos de mestrado e doutorado, mas aberto a graduandos interessados em iniciação científica.",
-        accent: "#047857", glow: "transparent",
-    },
-    {
-        id: 8, tag: "NOTÍCIA", publico: ["Todos"],
-        area: ["MAC", "MAE", "MAT", "LIC", "MAP"], categoria: "Bolsa",
-        title: "Nova biblioteca digital com 50 mil títulos disponível",
-        subtitle: "Plataforma integrada oferece acesso gratuito a livros, artigos e periódicos internacionais",
-        date: "01 de Maio, 2025", rawDate: daysAgo(25), time: "",
-        local: "biblioteca.exemplo.edu.br",
-        source: "Biblioteca Central",
-        link: "https://exemplo.edu.br/biblioteca",
-        body: "A Biblioteca Central anuncia a disponibilização da nova plataforma de biblioteca digital, com acesso a mais de 50.000 títulos entre livros técnicos, obras literárias, artigos científicos e periódicos internacionais.\n\nO acesso é feito mediante login institucional (mesmo usuário e senha do e-mail da instituição) diretamente pelo endereço biblioteca.exemplo.edu.br ou pelo aplicativo BiblioApp, disponível para iOS e Android.\n\nA plataforma também conta com ferramentas de marcação, criação de listas de leitura e histórico de acesso. Todos os alunos, professores e técnico-administrativos têm acesso pleno e gratuito durante o período de vínculo com a instituição.",
-        accent: "#b45309", glow: "transparent",
-    },
-];
+// ─── HELPERS (API → UI) ───────────────────────────────────────────────────────
+
+const daysAgo = (d: number) => new Date(Date.now() - d * 86400000);
+
+// YYYY-MM-DD no fuso local (toISOString usaria UTC e poderia voltar um dia)
+const toYMD = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+};
+
+const parseDate = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00:00`);
+
+const fmtDate = (iso: string) =>
+    parseDate(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+
+const isTag = (v: string): v is Tag => (ALL_TAGS as string[]).includes(v);
+const isPublico = (v: string): v is Publico => (ALL_PUBLICOS as string[]).includes(v);
+const isArea = (v: string): v is Area => (ALL_AREAS as string[]).includes(v);
+const isCategoria = (v: string): v is Categoria => (ALL_CATEGORIAS as string[]).includes(v);
+
+function toNoticia(e: EventApi, idx: number): Noticia {
+    const tag: Tag =
+        [...e.tags, e.tipo].map(t => t.toUpperCase()).find(isTag) ?? "NOTÍCIA";
+
+    const inicio = fmtDate(e.dataInicio);
+    const date = e.dataFim && e.dataFim.slice(0, 10) !== e.dataInicio.slice(0, 10)
+        ? `${inicio} a ${fmtDate(e.dataFim)}`
+        : inicio;
+
+    const time = e.horaInicio
+        ? e.horaFim ? `${e.horaInicio} – ${e.horaFim}` : e.horaInicio
+        : "";
+
+    return {
+        id: e.id ?? -(idx + 1),
+        tag,
+        publico: e.publicos.filter(isPublico),
+        area: e.areas.filter(isArea),
+        categoria: e.categorias.find(isCategoria) ?? "Todas",
+        title: e.titulo,
+        subtitle: e.subtitulo ?? "",
+        date,
+        rawDate: parseDate(e.dataInicio),
+        time,
+        local: e.local ?? "",
+        source: e.fonte,
+        link: e.link ?? "",
+        body: e.textoTicker ?? e.subtitulo ?? "",
+        accent: TAG_CONFIG[tag].accent,
+        glow: "transparent",
+    };
+}
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
 
@@ -195,9 +177,8 @@ const TagBadge = ({ tag, size = "md" }: { tag: Tag; size?: "sm" | "md" }) => {
     const Icon = config.icon;
     return (
         <span
-            className={`inline-flex items-center gap-1 font-bold rounded-full border transition-colors uppercase tracking-wider ${
-                size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
-            }`}
+            className={`inline-flex items-center gap-1 font-bold rounded-full border transition-colors uppercase tracking-wider ${size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs"
+                }`}
             style={{ backgroundColor: config.bg, color: config.accent, borderColor: config.border }}
         >
             <Icon className={size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5"} />
@@ -255,11 +236,10 @@ const FilterPanel = ({
                             <button
                                 key={dr}
                                 onClick={() => { setSelectedDateRange(dr); onItemClick?.(); }}
-                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                                    active
+                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${active
                                         ? "bg-blue-900 text-white shadow-xs"
                                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                }`}
+                                    }`}
                             >
                                 <span>{dr}</span>
                                 {active && <ChevronRight className="w-3.5 h-3.5 opacity-80" />}
@@ -275,15 +255,14 @@ const FilterPanel = ({
                 <div className="flex flex-col gap-1">
                     <button
                         onClick={() => { clearTags(); onItemClick?.(); }}
-                        className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                            selectedTags.length === 0
+                        className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${selectedTags.length === 0
                                 ? "bg-blue-900 text-white shadow-xs"
                                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                        }`}
+                            }`}
                     >
                         <span>Todos os Tipos</span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedTags.length === 0 ? "bg-blue-800 text-blue-100" : "bg-slate-100 text-slate-500"}`}>
-                            {noticias.length}
+                            {counts.total ?? 0}
                         </span>
                     </button>
                     {ALL_TAGS.map(tag => {
@@ -294,11 +273,10 @@ const FilterPanel = ({
                             <button
                                 key={tag}
                                 onClick={() => { toggleTag(tag); onItemClick?.(); }}
-                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                                    active
+                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${active
                                         ? "bg-slate-900 text-white shadow-xs"
                                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                }`}
+                                    }`}
                             >
                                 <span className="flex items-center gap-2">
                                     <Icon className="w-3.5 h-3.5" style={{ color: active ? "#ffffff" : config.accent }} />
@@ -325,11 +303,10 @@ const FilterPanel = ({
                             <button
                                 key={cat}
                                 onClick={() => { setSelectedCategoria(cat); onItemClick?.(); }}
-                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                                    active
+                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${active
                                         ? "bg-blue-900 text-white shadow-xs"
                                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                }`}
+                                    }`}
                             >
                                 <span className="flex items-center gap-2">
                                     <Icon className="w-3.5 h-3.5" style={{ color: active ? "#ffffff" : config.accent }} />
@@ -353,11 +330,10 @@ const FilterPanel = ({
                             <button
                                 key={area}
                                 onClick={() => { setSelectedArea(area); onItemClick?.(); }}
-                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                                    active
+                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${active
                                         ? "bg-blue-900 text-white shadow-xs"
                                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                }`}
+                                    }`}
                             >
                                 <span className="flex items-center gap-2">
                                     {area !== "Todos" && (
@@ -384,11 +360,10 @@ const FilterPanel = ({
                             <button
                                 key={p}
                                 onClick={() => { setSelectedPublico(p); onItemClick?.(); }}
-                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                                    active
+                                className={`w-full flex items-center justify-between text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${active
                                         ? "bg-blue-900 text-white shadow-xs"
                                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                                }`}
+                                    }`}
                             >
                                 <span>{p}</span>
                                 {active && <ChevronRight className="w-3.5 h-3.5 opacity-80" />}
@@ -518,8 +493,6 @@ const FilterChips = ({
 // ─── MODAL DETAILS ────────────────────────────────────────────────────────────
 
 const Modal = ({ item, onClose, isMobile }: { item: Noticia; onClose: () => void; isMobile: boolean }) => {
-    const config = TAG_CONFIG[item.tag];
-
     useEffect(() => {
         document.body.style.overflow = "hidden";
         return () => { document.body.style.overflow = ""; };
@@ -561,9 +534,11 @@ const Modal = ({ item, onClose, isMobile }: { item: Noticia; onClose: () => void
                     <h2 className="text-xl md:text-2xl font-bold text-slate-900 leading-snug">
                         {item.title}
                     </h2>
-                    <p className="text-xs md:text-sm font-medium text-slate-600 leading-relaxed">
-                        {item.subtitle}
-                    </p>
+                    {item.subtitle && (
+                        <p className="text-xs md:text-sm font-medium text-slate-600 leading-relaxed">
+                            {item.subtitle}
+                        </p>
+                    )}
                 </div>
 
                 {/* MODAL BODY */}
@@ -590,7 +565,7 @@ const Modal = ({ item, onClose, isMobile }: { item: Noticia; onClose: () => void
                             <MapPin className="w-4 h-4 text-blue-900 shrink-0 mt-0.5" />
                             <div>
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Local</div>
-                                <div className="text-xs font-semibold text-slate-800">{item.local}</div>
+                                <div className="text-xs font-semibold text-slate-800">{item.local || "Não especificado"}</div>
                             </div>
                         </div>
 
@@ -604,16 +579,18 @@ const Modal = ({ item, onClose, isMobile }: { item: Noticia; onClose: () => void
                     </div>
 
                     {/* DETAILED CONTENT */}
-                    <div className="space-y-3">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
-                            Descrição Completa
+                    {item.body && (
+                        <div className="space-y-3">
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">
+                                Descrição Completa
+                            </div>
+                            {item.body.split("\n\n").map((paragraph, idx) => (
+                                <p key={idx} className="text-xs md:text-sm text-slate-700 leading-relaxed">
+                                    {paragraph}
+                                </p>
+                            ))}
                         </div>
-                        {item.body.split("\n\n").map((paragraph, idx) => (
-                            <p key={idx} className="text-xs md:text-sm text-slate-700 leading-relaxed">
-                                {paragraph}
-                            </p>
-                        ))}
-                    </div>
+                    )}
 
                     {/* OFFICIAL LINK */}
                     {item.link && (
@@ -707,6 +684,10 @@ const NoticiaCard = ({ item, onClick, isMobile }: { item: Noticia; onClick: () =
 // ─── MAIN PAGE COMPONENT ──────────────────────────────────────────────────────
 
 export default function Noticias() {
+    const [noticias, setNoticias] = useState<Noticia[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
     const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
     const [selectedPublico, setSelectedPublico] = useState<Publico>("Todos");
     const [selectedArea, setSelectedArea] = useState<Area>("Todos");
@@ -717,17 +698,50 @@ export default function Noticias() {
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     const [isMobile, setIsMobile] = useState(false);
-    const [isTablet, setIsTablet] = useState(false);
 
     useEffect(() => {
-        const check = () => {
-            setIsMobile(window.innerWidth < 768);
-            setIsTablet(window.innerWidth < 1024);
-        };
+        const check = () => setIsMobile(window.innerWidth < 768);
         check();
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
     }, []);
+
+    // Envia os filtros ao backend (GET /get_eventos) sempre que algum muda
+    useEffect(() => {
+        const controller = new AbortController();
+        const params = new URLSearchParams();
+
+        selectedTags.forEach(t => params.append("all_tags", t));
+        if (selectedPublico !== "Todos") params.append("all_publicos", selectedPublico);
+        if (selectedArea !== "Todos") params.append("all_areas", selectedArea);
+        if (selectedCategoria !== "Todas") params.append("all_categorias", selectedCategoria);
+
+        const days = DATE_RANGE_DAYS[selectedDateRange];
+        if (days) {
+            params.append("data_inicio", toYMD(daysAgo(days)));
+            params.append("data_fim", toYMD(new Date()));
+        }
+
+        setLoading(true);
+        setError(null);
+
+        fetch(`${API_URL}/get_eventos?${params.toString()}`, { signal: controller.signal })
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json() as Promise<EventApi[]>;
+            })
+            .then(data => setNoticias(data.map(toNoticia)))
+            .catch(err => {
+                if (err.name === "AbortError") return;
+                console.error("Erro ao buscar eventos:", err);
+                setError("Não foi possível carregar os comunicados.");
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+
+        return () => controller.abort();
+    }, [selectedTags, selectedPublico, selectedArea, selectedCategoria, selectedDateRange]);
 
     const toggleTag = (tag: Tag) =>
         setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -741,32 +755,20 @@ export default function Noticias() {
         setSearch("");
     };
 
-    const getDateLimit = (range: DateRange): Date | null => {
-        if (range === "Últimos 7 dias") return daysAgo(7);
-        if (range === "Últimos 10 dias") return daysAgo(10);
-        if (range === "Últimos 30 dias") return daysAgo(30);
-        return null;
-    };
-
-    const filtered = useMemo(() => noticias.filter(n => {
-        if (selectedTags.length > 0 && !selectedTags.includes(n.tag)) return false;
-        if (selectedPublico !== "Todos" && !n.publico.includes(selectedPublico)) return false;
-        if (selectedArea !== "Todos" && !n.area.includes(selectedArea)) return false;
-        if (selectedCategoria !== "Todas" && n.categoria !== selectedCategoria) return false;
-        const dateLimit = getDateLimit(selectedDateRange);
-        if (dateLimit && n.rawDate < dateLimit) return false;
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            if (!n.title.toLowerCase().includes(q) && !n.subtitle.toLowerCase().includes(q)) return false;
-        }
-        return true;
-    }), [selectedTags, selectedPublico, selectedArea, selectedCategoria, selectedDateRange, search]);
+    // A busca por texto continua no cliente (o backend não tem parâmetro para isso)
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return noticias;
+        return noticias.filter(n =>
+            n.title.toLowerCase().includes(q) || n.subtitle.toLowerCase().includes(q)
+        );
+    }, [noticias, search]);
 
     const counts = useMemo(() => {
-        const c: Record<string, number> = {};
+        const c: Record<string, number> = { total: noticias.length };
         ALL_TAGS.forEach(t => { c[t] = noticias.filter(n => n.tag === t).length; });
         return c;
-    }, []);
+    }, [noticias]);
 
     const hasFilters = selectedTags.length > 0 || selectedPublico !== "Todos" || selectedArea !== "Todos"
         || selectedCategoria !== "Todas" || selectedDateRange !== "Todos" || !!search;
@@ -840,7 +842,7 @@ export default function Noticias() {
                                 {selectedTags.length === 0 ? "Todos os Comunicados" : selectedTags.join(" & ")}
                             </h2>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                {filtered.length} publicação{filtered.length !== 1 ? "ões" : "ão"} encontrada{filtered.length !== 1 ? "s" : ""}
+                                {filtered.length} {filtered.length !== 1 ? "publicações encontradas" : "publicação encontrada"}
                             </p>
                         </div>
 
@@ -848,11 +850,10 @@ export default function Noticias() {
                             {isMobile && (
                                 <button
                                     onClick={() => setDrawerOpen(true)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                                        hasFilters
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${hasFilters
                                             ? "bg-blue-900 text-white border-blue-900 shadow-xs"
                                             : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                                    }`}
+                                        }`}
                                 >
                                     <SlidersHorizontal className="w-3.5 h-3.5" />
                                     <span>Filtros {filterCount > 0 && `(${filterCount})`}</span>
@@ -882,7 +883,15 @@ export default function Noticias() {
 
                     {/* CARDS LIST */}
                     <div className="flex flex-col gap-3">
-                        {filtered.length === 0 ? (
+                        {loading ? (
+                            <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-xs text-slate-500 shadow-xs">
+                                Carregando comunicados...
+                            </div>
+                        ) : error ? (
+                            <div className="bg-white border border-rose-200 rounded-2xl p-12 text-center text-xs text-rose-700 shadow-xs">
+                                {error}
+                            </div>
+                        ) : filtered.length === 0 ? (
                             <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center shadow-xs">
                                 <Search className="w-10 h-10 text-slate-300 mx-auto mb-3" />
                                 <h3 className="text-base font-bold text-slate-800 mb-1">

@@ -43,7 +43,7 @@ export default function Login() {
             addToast("Login realizado com sucesso!", "success");
 
             setTimeout(() => {
-                router.push("/add_evento");
+                router.push("/novo");
             }, 800);
         } catch (err) {
             console.error(err);

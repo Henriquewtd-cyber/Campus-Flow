@@ -1,7 +1,7 @@
 
-.PHONY: up down build rebuild delete logs logs-api logs-frontend logs-db \
+.PHONY: up down build rebuild delete logs logs-api logs-frontend logs-db logs-n8n \
         shell frontend-shell db-shell admin evento restart restart-api \
-        restart-frontend ps status api frontend db test
+        restart-frontend restart-n8n ps status api frontend db n8n n8n-stop n8n-start test
 
 # Subir todos os serviços
 up:
@@ -38,6 +38,9 @@ logs-frontend:
 logs-db:
 	docker compose logs -f db
 
+logs-n8n:
+	docker compose logs -f n8n
+
 # Acessar o terminal do backend
 shell:
 	docker compose exec api sh
@@ -69,6 +72,9 @@ restart-api:
 restart-frontend:
 	docker compose restart frontend
 
+restart-n8n:
+	docker compose restart n8n
+
 # Verificar containers em execução
 ps:
 	docker compose ps
@@ -84,3 +90,13 @@ frontend:
 
 db:
 	docker compose up -d db
+
+# Gerenciar o n8n
+n8n:
+	docker compose up -d n8n
+
+n8n-stop:
+	docker compose stop n8n
+
+n8n-start:
+	docker compose start n8n

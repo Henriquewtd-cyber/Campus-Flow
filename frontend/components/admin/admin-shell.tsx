@@ -5,12 +5,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Edit3, ListFilter, PlusCircle } from "lucide-react";
+import { Building2, Edit3, ListFilter, PlusCircle, ClipboardCheck } from "lucide-react";
 import { Header } from "@/components/header";
 
 export const ROUTES = {
     novo: "/novo",
     lista: "/editar",
+    validar: "/validate",
     editar: (id: number) => `/editar/${id}`,
 };
 
@@ -24,6 +25,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     const pathname = (usePathname() ?? "").replace(/\/$/, "");
     const isNovo = pathname === ROUTES.novo;
     const isLista = pathname === ROUTES.lista;
+    const isValidar = pathname === ROUTES.validar;
     const isEditing = !isLista && pathname.startsWith(ROUTES.lista);
 
     return (
@@ -53,6 +55,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                         <Link href={ROUTES.lista} className={tabClass(isLista)}>
                             <ListFilter className="w-3.5 h-3.5" />
                             <span>Gerenciar</span>
+                        </Link>
+
+                        <Link href={ROUTES.validar} className={tabClass(isValidar)}>
+                            <ClipboardCheck className="w-3.5 h-3.5" />
+                            <span>Validar</span>
                         </Link>
 
                         {isEditing && (

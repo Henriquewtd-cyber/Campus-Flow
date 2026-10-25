@@ -1,6 +1,6 @@
 
 
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, func
 from sqlalchemy.dialects.postgresql import JSONB
 from app.db.database import Base
 
@@ -16,7 +16,7 @@ class Usuario(Base):
 
 class Evento(Base):
     __tablename__ = "eventos"
-
+    # modelo de evento para o banco de dados
     id = Column(Integer, primary_key=True, index=True)
 
     dataInicio = Column(String(20))
@@ -37,3 +37,32 @@ class Evento(Base):
     publicos = Column(JSONB, nullable=False, default=list)
     areas = Column(JSONB, nullable=False, default=list)
     categorias = Column(JSONB, nullable=False, default=list)
+
+
+
+class Evento_Pendente(Base):
+    # modelo de evento pendente para o banco de dados, usado para armazenar eventos extraídos pela IA antes da validação
+    __tablename__ = "eventos_pendentes"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Dados extraídos pela IA, ainda não validados
+    dados_brutos = Column(JSONB, nullable=False)
+
+    erros_validacao = Column(JSONB, nullable=False, default=list)
+
+    # Identificação da origem para evitar importações duplicadas
+    email_id = Column(String(255), nullable=True, unique=True)
+
+    criado_em = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    atualizado_em = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )

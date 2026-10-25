@@ -12,20 +12,25 @@ import {
     Clock,
     Eye,
     FileText,
+    Hash,
     Link2,
     MapPin,
     Radio,
     Star,
     Tag as TagIcon,
+    X,
 } from "lucide-react";
 import type { EventPayload, EventoApi } from "@/app/lib/eventos-api";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const TIPOS = ["EVENTO", "AVISO", "PALESTRA", "NOTÍCIA"];
-const AREAS = ["MAC", "MAE", "MAT", "LIC", "MAP"];
-const CATEGORIAS = ["Curso", "Vagas", "Projeto", "Bolsa"];
-const PUBLICOS = ["Graduação", "Pós-Graduação", "Docentes", "Técnicos"];
+export const TIPOS = ["EVENTO", "AVISO", "PALESTRA", "NOTÍCIA"];
+export const AREAS = ["MAC", "MAE", "MAT", "LIC", "MAP"];
+export const CATEGORIAS = ["Curso", "Vagas", "Projeto", "Bolsa"];
+export const PUBLICOS = ["Graduação", "Pós-Graduação", "Docentes", "Técnicos"];
+
+export const MAX_TAGS = 10;
+export const MAX_TAG_LENGTH = 30;
 
 type ColorSet = { accent: string; bg: string; border: string };
 const DEFAULT_COLOR: ColorSet = { accent: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" };
@@ -78,6 +83,7 @@ export const initialForm = {
     areas: [] as string[],
     categorias: [] as string[],
     publicos: [] as string[],
+    tags: [] as string[],
 };
 
 export type FormState = typeof initialForm;
@@ -123,7 +129,7 @@ export const toPayload = (f: FormState): EventPayload => ({
     destaque: f.destaque,
     ticker: f.ticker,
     textoTicker: f.ticker ? nullIfEmpty(f.textoTicker) : null,
-    tags: [f.tipo], // mantém `tags` consistente com o tipo (útil para filtrar por all_tags)
+    tags: f.tags,
     publicos: f.publicos,
     areas: f.areas,
     categorias: f.categorias,
@@ -147,6 +153,7 @@ export const fromEvento = (e: EventoApi): FormState => ({
     areas: e.areas ?? [],
     categorias: e.categorias ?? [],
     publicos: e.publicos ?? [],
+    tags: e.tags ?? [],
 });
 
 const inputClass =
@@ -346,6 +353,108 @@ function ClassificacaoSection({ form, set }: FormProps) {
     );
 }
 
+function FormTags({ form, set }: FormProps) {
+    const [draft, setDraft] = useState("");
+
+    const addTags = (raw: string) => {
+        const novas = raw
+            .split(",")
+            .map(t => t.trim().slice(0, MAX_TAG_LENGTH))
+            .filter(Boolean);
+
+        if (novas.length === 0) return;
+
+        const existentes = new Set(form.tags.map(t => t.toLowerCase()));
+        const resultado = [...form.tags];
+
+        for (const t of novas) {
+            if (resultado.length >= MAX_TAGS) break;
+            if (existentes.has(t.toLowerCase())) continue;
+            existentes.add(t.toLowerCase());
+            resultado.push(t);
+        }
+
+        set("tags", resultado);
+    };
+
+    const removeTag = (tag: string) => set("tags", form.tags.filter(t => t !== tag));
+
+    const commitDraft = () => {
+        addTags(draft);
+        setDraft("");
+    };
+
+    const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            commitDraft();
+        } else if (e.key === "Backspace" && !draft && form.tags.length > 0) {
+            removeTag(form.tags[form.tags.length - 1]);
+        }
+    };
+
+    const limiteAtingido = form.tags.length >= MAX_TAGS;
+
+    return (
+        <div className={sectionClass}>
+            <div className={sectionTitleClass}>
+                <Hash className="w-4 h-4 text-blue-900" />
+                <span>Tags</span>
+            </div>
+
+            <Field label="Palavras-chave" hint="Enter ou vírgula para adicionar">
+                <input
+                    type="text"
+                    placeholder={limiteAtingido ? `Limite de ${MAX_TAGS} tags atingido` : "Ex: Quant Finance, Itaú BBA"}
+                    value={draft}
+                    disabled={limiteAtingido}
+                    maxLength={MAX_TAG_LENGTH}
+                    onChange={e => {
+                        const v = e.target.value;
+                        // colar "a, b, c" adiciona tudo de uma vez
+                        if (v.includes(",")) {
+                            addTags(v);
+                            setDraft("");
+                        } else {
+                            setDraft(v);
+                        }
+                    }}
+                    onKeyDown={onKeyDown}
+                    onBlur={commitDraft}
+                    className={`${inputClass} disabled:opacity-60 disabled:cursor-not-allowed`}
+                />
+
+                {form.tags.length > 0 ? (
+                    <div className="flex items-center gap-2 flex-wrap mt-1">
+                        {form.tags.map(tag => (
+                            <span
+                                key={tag}
+                                className="inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full text-xs font-semibold border bg-slate-50 text-slate-700 border-slate-200"
+                            >
+                                <span>{tag}</span>
+                                <button
+                                    type="button"
+                                    aria-label={`Remover tag ${tag}`}
+                                    onClick={() => removeTag(tag)}
+                                    className="p-0.5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-[11px] text-slate-400 mt-1">Nenhuma tag adicionada</p>
+                )}
+
+                <div className="text-[10px] text-slate-400 text-right font-medium">
+                    {form.tags.length}/{MAX_TAGS} tags
+                </div>
+            </Field>
+        </div>
+    );
+}
+
 function FormDataLocal({ form, set }: FormProps) {
     const rangeInvalid = isDateRangeInvalid(form);
     const dateClass = "w-full h-10 px-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 transition-all";
@@ -515,6 +624,14 @@ function FormPreview({ form }: { form: FormState }) {
                     <p className="text-xs text-slate-600 leading-relaxed">{form.subtitulo}</p>
                 )}
 
+                {form.tags.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        {form.tags.map(t => (
+                            <span key={t} className="text-[10px] font-semibold text-slate-500">#{t}</span>
+                        ))}
+                    </div>
+                )}
+
                 <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 font-medium pt-2 border-t border-slate-100">
                     {form.dataInicio && (
                         <span className="flex items-center gap-1">
@@ -549,6 +666,7 @@ export function FormBody({ form, set }: FormProps) {
         <>
             <FormIdentificacao form={form} set={set} />
             <ClassificacaoSection form={form} set={set} />
+            <FormTags form={form} set={set} />
             <FormDataLocal form={form} set={set} />
             <FormOrigemLink form={form} set={set} />
             <FormExibicao form={form} set={set} />

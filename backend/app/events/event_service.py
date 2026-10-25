@@ -11,6 +11,10 @@ def add_evento(event: Event) -> EventResponse:
     db = SessionLocal()
 
     try:
+
+        for i in range(len(event.tags)):
+            event.tags[i] = event.tags[i].lower()
+
         event = Evento(
             dataInicio=event.dataInicio,
             dataFim=event.dataFim,
@@ -25,7 +29,7 @@ def add_evento(event: Event) -> EventResponse:
             ticker=event.ticker,
             tipo=event.tipo,
             titulo=event.titulo,
-            tags=event.tags or [],
+            tags = event.tags or [],
             publicos=event.publicos or [],
         )
 
@@ -35,6 +39,7 @@ def add_evento(event: Event) -> EventResponse:
     
     except Exception as e:
         db.rollback()
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error occurred while adding event"
@@ -69,10 +74,9 @@ def get_eventos(
             query = query.filter(Evento.dataInicio < fim_exclusivo.isoformat())
 
         if params.all_tags:
-            query = query.filter(
-                Evento.tags.op("@>")([params.all_tags[0]])
-            )
-            for tag in params.all_tags[1:]:
+            tags = [tag.lower().strip() for tag in params.all_tags]
+
+            for tag in tags:
                 query = query.filter(
                     Evento.tags.op("@>")([tag])
                 )
@@ -119,30 +123,44 @@ def update_evento(event_id: int, event: Event) -> EventResponse:
     db = SessionLocal()
 
     try:
-        existing_event = db.query(Evento).filter(Evento.id == event_id).first()
+        existing_event = (
+            db.query(Evento)
+            .filter(Evento.id == event_id)
+            .first()
+        )
+
         if not existing_event:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Event with ID {event_id} not found"
             )
 
-        for field, value in event.dict(exclude_unset=True).items():
+        for field, value in event.model_dump(exclude_unset=True).items():
+            if field == "tags" and value is not None:
+                value = [tag.lower().strip() for tag in value]
+
             setattr(existing_event, field, value)
 
         db.commit()
         db.refresh(existing_event)
 
+        return {
+            "status": "success",
+            "message": f"Event '{existing_event.titulo}' updated successfully"
+        }
+
+    except HTTPException:
+        raise
+
     except Exception as e:
         db.rollback()
+        # Registre o erro real no log para facilitar a depuração.
+        print(f"Erro ao atualizar evento {event_id}: {e}")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error occurred while updating event"
+            detail="Erro ao atualizar evento"
         )
 
     finally:
         db.close()
-
-    return {
-        "status": "success",
-        "message": f"Event '{existing_event.titulo}' updated successfully"
-    }

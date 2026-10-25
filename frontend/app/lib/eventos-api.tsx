@@ -29,6 +29,20 @@ export type EventoApi = EventPayload & { id?: number | null };
 
 export type EventResponse = { status: string; message: string };
 
+// Pendente extraído de e-mail (GET /validate). `id` é o do pendente, não do evento.
+export type PendenteApi = {
+    id: number;
+    dados_brutos: { evento: Record<string, unknown> | null; eventoEncontrado: boolean } | null;
+    erros_validacao: string[];
+    email_id: string | null;
+};
+
+export const getPendentes = () =>
+    request<PendenteApi[]>("/validate", { cache: "no-store" }, true);
+
+export const removePendente = (id: number) =>
+    request<EventResponse>(`/n8n_remove_event?event_id=${id}`, { method: "DELETE" }, true);
+
 // Filtros aceitos por /get_eventos (EventQueryParams). Datas no formato YYYY-MM-DD.
 export type EventFilters = {
     dataInicio?: string;

@@ -24,16 +24,28 @@ import type { EventPayload, EventoApi } from "@/app/lib/eventos-api";
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
+
 export const TIPOS = ["EVENTO", "AVISO", "PALESTRA", "NOTÍCIA"];
-export const AREAS = ["MAC", "MAE", "MAT", "LIC", "MAP"];
+export const AREAS = ["Todas as áreas", "MAC", "MAE", "MAT", "LIC", "MAP"];
 export const CATEGORIAS = ["Curso", "Vagas", "Projeto", "Bolsa"];
-export const PUBLICOS = ["Graduação", "Pós-Graduação", "Docentes", "Técnicos"];
+export const PUBLICOS = [
+    "Todos os públicos",
+    "Graduação",
+    "Pós-Graduação",
+    "Docentes",
+    "Técnicos",
+];
 
 export const MAX_TAGS = 10;
 export const MAX_TAG_LENGTH = 30;
 
 type ColorSet = { accent: string; bg: string; border: string };
-const DEFAULT_COLOR: ColorSet = { accent: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" };
+
+const DEFAULT_COLOR: ColorSet = {
+    accent: "#1e40af",
+    bg: "#eff6ff",
+    border: "#bfdbfe",
+};
 
 const TIPO_CONFIG: Record<string, ColorSet> = {
     EVENTO: { accent: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
@@ -43,6 +55,7 @@ const TIPO_CONFIG: Record<string, ColorSet> = {
 };
 
 const AREA_COLORS: Record<string, ColorSet> = {
+    "Todas as áreas": { accent: "#334155", bg: "#f1f5f9", border: "#cbd5e1" },
     MAC: { accent: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
     MAE: { accent: "#047857", bg: "#ecfdf5", border: "#a7f3d0" },
     MAT: { accent: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe" },
@@ -58,12 +71,12 @@ const CATEGORIA_COLORS: Record<string, ColorSet> = {
 };
 
 const PUBLICO_COLORS: Record<string, ColorSet> = {
+    "Todos os públicos": { accent: "#334155", bg: "#f1f5f9", border: "#cbd5e1" },
     "Graduação": { accent: "#1e40af", bg: "#eff6ff", border: "#bfdbfe" },
     "Pós-Graduação": { accent: "#6d28d9", bg: "#f5f3ff", border: "#ddd6fe" },
     "Docentes": { accent: "#0e7490", bg: "#ecfeff", border: "#a5f3fc" },
     "Técnicos": { accent: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
 };
-
 // ─── FORM STATE ───────────────────────────────────────────────────────────────
 
 export const initialForm = {
@@ -114,6 +127,13 @@ export const isFormInvalid = (f: FormState) =>
 const nullIfEmpty = (s: string) => (s.trim() ? s.trim() : null);
 const trimTime = (s?: string | null) => (s ? s.slice(0, 5) : "");
 
+// "todos" é exclusivo: se vier junto com outras opções, fica só ele
+const normalizeAreas = (arr: string[] = []) =>
+    arr.includes("Todas as áreas") ? ["Todas as áreas"] : arr;
+
+const normalizePublicos = (arr: string[] = []) =>
+    arr.includes("Todos os públicos") ? ["Todos os públicos"] : arr;
+
 // Formulário -> model `Event` do backend
 export const toPayload = (f: FormState): EventPayload => ({
     tipo: f.tipo,
@@ -130,8 +150,8 @@ export const toPayload = (f: FormState): EventPayload => ({
     ticker: f.ticker,
     textoTicker: f.ticker ? nullIfEmpty(f.textoTicker) : null,
     tags: f.tags,
-    publicos: f.publicos,
-    areas: f.areas,
+    publicos: normalizePublicos(f.publicos),
+    areas: normalizeAreas(f.areas),
     categorias: f.categorias,
 });
 
@@ -150,9 +170,9 @@ export const fromEvento = (e: EventoApi): FormState => ({
     destaque: e.destaque,
     ticker: e.ticker,
     textoTicker: e.textoTicker ?? "",
-    areas: e.areas ?? [],
+    areas: normalizeAreas(e.areas ?? []),
     categorias: e.categorias ?? [],
-    publicos: e.publicos ?? [],
+    publicos: normalizePublicos(e.publicos ?? []),
     tags: e.tags ?? [],
 });
 
@@ -319,8 +339,42 @@ function FormIdentificacao({ form, set }: FormProps) {
 }
 
 function ClassificacaoSection({ form, set }: FormProps) {
-    const toggle = (key: "areas" | "categorias" | "publicos", value: string) =>
-        set(key, form[key].includes(value) ? form[key].filter(x => x !== value) : [...form[key], value]);
+    const toggle = (
+        key: "areas" | "categorias" | "publicos",
+        value: string
+    ) => {
+        const atual = form[key];
+
+        // Categorias continuam permitindo múltiplas seleções.
+        if (key === "categorias") {
+            set(
+                key,
+                atual.includes(value)
+                    ? atual.filter(x => x !== value)
+                    : [...atual, value]
+            );
+            return;
+        }
+
+        const todos = key === "areas"
+            ? "Todas as áreas"
+            : "Todos os públicos";
+
+        // Desmarcar a opção selecionada.
+        if (atual.includes(value)) {
+            set(key, atual.filter(x => x !== value));
+            return;
+        }
+
+        // A opção abrangente é exclusiva.
+        if (value === todos) {
+            set(key, [todos]);
+            return;
+        }
+
+        // Selecionar uma opção específica remove a opção abrangente.
+        set(key, [...atual.filter(x => x !== todos), value]);
+    };
 
     return (
         <div className={sectionClass}>

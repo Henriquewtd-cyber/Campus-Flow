@@ -13,19 +13,29 @@ def get_pendent_events():
         for event in events:
             dados_brutos = event.dados_brutos
 
-            if (
-                not isinstance(dados_brutos, dict)
-                or dados_brutos.get("eventoEncontrado") is not True
-                or not isinstance(dados_brutos.get("evento"), dict)
-            ):
+            if not isinstance(dados_brutos, dict):
                 continue
 
-            evento = Event.model_validate(dados_brutos["evento"])
+            try:
+                dados_evento = dados_brutos.get("evento")
+
+                if not isinstance(dados_evento, dict):
+                    print(f"Evento pendente {event.id} não contém dados válidos.")
+                    continue
+
+                evento = Event.model_validate(dados_evento)
+
+            except Exception as e:
+                print(f"Erro ao validar evento {event.id}: {e}")
+                continue
 
             resultado.append({
                 "id": event.id,
                 "dados_brutos": dados_brutos,
                 "evento": evento.model_dump(mode="json"),
+                "sugestoes": dados_brutos.get("sugestoes"),
+                "erros_validacao": event.erros_validacao,
+                "email_id": event.email_id,
             })
 
         return resultado

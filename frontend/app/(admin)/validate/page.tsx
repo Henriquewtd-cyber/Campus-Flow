@@ -6,15 +6,21 @@
 //   1) POST   /add_evento
 //   2) DELETE /n8n_remove_event/{id do pendente}   (automático)
 // "Excluir" vai direto ao DELETE. Qualquer falha é tratada como erro.
+//
+// dados_brutos chega como { evento, messageId, sugestoes }. Formato antigo
+// (o próprio evento direto em dados_brutos) continua suportado.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
     AlertTriangle,
+    Check,
     CheckCircle2,
     ChevronDown,
+    Copy,
     Inbox,
     Loader2,
     RefreshCw,
+    Sparkles,
     Trash2,
 } from "lucide-react";
 import {
@@ -48,7 +54,11 @@ type Item = {
     pend: Pendente;
     initial: FormState;
     avisos: string[]; // o que foi corrigido/descartado ao carregar
+    sugestoes: EventoBruto | null; // sugestões de campos geradas pela IA (só leitura)
 };
+
+const isRecord = (v: unknown): v is EventoBruto =>
+    !!v && typeof v === "object" && !Array.isArray(v);
 
 // ─── NORMALIZAÇÃO (dado bruto do Gemini → estado do formulário) ───────────────
 
@@ -71,19 +81,55 @@ const asTime = (v: unknown) => {
 };
 
 // Mantém só valores permitidos (ignorando maiúsculas/minúsculas) e reporta o resto
-function pickAllowed(values: unknown, allowed: string[], campo: string, avisos: string[]): string[] {
-    const arr = Array.isArray(values) ? values.filter((x): x is string => typeof x === "string") : [];
+function pickAllowed(
+    values: unknown,
+    allowed: string[],
+    campo: string,
+    avisos: string[]
+): string[] {
+    const arr = Array.isArray(values)
+        ? values.filter((x): x is string => typeof x === "string")
+        : [];
+
+    const todosLabel =
+        campo === "areas"
+            ? "Todas as áreas"
+            : campo === "publicos"
+                ? "Todos os públicos"
+                : null;
+
+    // Compatibilidade com dados antigos do n8n que usam "todos".
+    const temTodos = arr.some(
+        v => v.trim().toLowerCase() === "todos" ||
+            (todosLabel !== null &&
+                v.trim().toLowerCase() === todosLabel.toLowerCase())
+    );
+
+    if (temTodos && todosLabel) {
+        return [todosLabel];
+    }
+
     const ok: string[] = [];
     const descartados: string[] = [];
 
     for (const v of arr) {
-        const canon = allowed.find(a => a.toLowerCase() === v.trim().toLowerCase());
-        if (canon) { if (!ok.includes(canon)) ok.push(canon); }
-        else descartados.push(v);
+        const canon = allowed.find(
+            a => a.toLowerCase() === v.trim().toLowerCase()
+        );
+
+        if (canon) {
+            if (!ok.includes(canon)) ok.push(canon);
+        } else {
+            descartados.push(v);
+        }
     }
+
     if (descartados.length) {
-        avisos.push(`${campo}: ${descartados.map(d => `"${d}"`).join(", ")} não existe(m) na lista e foi/foram removido(s).`);
+        avisos.push(
+            `${campo}: ${descartados.map(d => `"${d}"`).join(", ")} não existe(m) na lista e foi/foram removido(s).`
+        );
     }
+
     return ok;
 }
 
@@ -141,13 +187,157 @@ function fromBruto(e: EventoBruto): { form: FormState; avisos: string[] } {
     return { form, avisos };
 }
 
+
 function toItem(p: Pendente): Item | null {
-    // Pendentes sem evento não são enviados pelo n8n; se algum chegar, é ignorado.
-    const e = p.dados_brutos?.eventoEncontrado ? p.dados_brutos.evento : null;
-    if (!e) return null;
-    const { form, avisos } = fromBruto(e);
-    return { pend: p, initial: form, avisos };
+    const raw: unknown = p.dados_brutos;
+
+    if (!isRecord(raw)) return null;
+
+    // Formato novo: { evento, messageId, sugestoes }. Formato antigo: o próprio evento.
+    const evento = isRecord(raw.evento) ? raw.evento : raw;
+    const sugestoes = isRecord(raw.sugestoes) ? raw.sugestoes : null;
+
+    const { form, avisos } = fromBruto(evento);
+
+    return { pend: p, initial: form, avisos, sugestoes };
 }
+
+
+// ─── SUGESTÕES (campo a campo, com cópia rápida) ──────────────────────────────
+
+const CAMPOS_SUGESTAO: { key: keyof FormState; label: string }[] = [
+    { key: "titulo", label: "Título" },
+    { key: "subtitulo", label: "Subtítulo" },
+    { key: "tipo", label: "Tipo" },
+    { key: "dataInicio", label: "Data início" },
+    { key: "dataFim", label: "Data fim" },
+    { key: "horaInicio", label: "Horário início" },
+    { key: "horaFim", label: "Horário fim" },
+    { key: "local", label: "Local" },
+    { key: "fonte", label: "Fonte" },
+    { key: "link", label: "Link" },
+    { key: "tags", label: "Tags" },
+    { key: "areas", label: "Áreas" },
+    { key: "categorias", label: "Categorias" },
+    { key: "publicos", label: "Públicos" },
+    { key: "destaque", label: "Destaque" },
+    { key: "ticker", label: "Ticker" },
+    { key: "textoTicker", label: "Texto do ticker" },
+];
+
+// Texto que será exibido/copiado. Vazio = campo sem sugestão (não aparece).
+// Arrays viram "a, b, c": colado no campo de tags, adiciona todas de uma vez.
+function sugestaoTexto(v: unknown): string {
+    if (Array.isArray(v)) {
+        return v.filter((x): x is string => typeof x === "string" && !!x.trim()).join(", ");
+    }
+    if (typeof v === "boolean") return v ? "Sim" : "";
+    return clean(v);
+}
+
+const normCompare = (v: unknown): string => {
+    if (Array.isArray(v)) return v.map(x => String(x).trim().toLowerCase()).sort().join("|");
+    if (typeof v === "boolean") return v ? "sim" : "";
+    return String(v ?? "").trim().toLowerCase();
+};
+
+function CopyButton({ text, label }: { text: string; label: string }) {
+    const [copied, setCopied] = useState(false);
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+    const copy = async () => {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            // fallback para contextos sem Clipboard API (http, navegadores antigos)
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+        setCopied(true);
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => setCopied(false), 1500);
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={copy}
+            aria-label={`Copiar ${label}`}
+            title={`Copiar ${label}`}
+            className={`inline-flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${copied
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+        >
+            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copied ? "Copiado" : "Copiar"}</span>
+        </button>
+    );
+}
+
+function SugestoesPanel({ sugestoes, form }: { sugestoes: EventoBruto; form: FormState }) {
+    const [open, setOpen] = useState(true);
+
+    const linhas = CAMPOS_SUGESTAO
+        .map(({ key, label }) => ({ key, label, texto: sugestaoTexto(sugestoes[key]) }))
+        .filter(l => l.texto);
+
+    if (linhas.length === 0) return null;
+
+    return (
+        <div className="rounded-xl border border-violet-200 bg-violet-50/60 overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                aria-expanded={open}
+                className="w-full flex items-center gap-2 px-3.5 py-3 text-left cursor-pointer hover:bg-violet-50 transition-colors"
+            >
+                <Sparkles className="w-4 h-4 text-violet-700" />
+                <span className="flex-1 text-[11px] font-bold text-violet-800 uppercase tracking-wider">
+                    Sugestões da IA ({linhas.length} campo{linhas.length !== 1 ? "s" : ""})
+                </span>
+                <ChevronDown className={`w-4 h-4 text-violet-500 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+
+            {open && (
+                <ul className="divide-y divide-violet-100 border-t border-violet-100 bg-white">
+                    {linhas.map(({ key, label, texto }) => {
+                        const igual = normCompare(form[key]) === normCompare(sugestoes[key]);
+                        return (
+                            <li key={key} className="flex items-start gap-3 px-3.5 py-2.5">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            {label}
+                                        </span>
+                                        {igual && (
+                                            <span className="text-[10px] font-semibold text-slate-400">
+                                                · já igual ao formulário
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs font-medium text-slate-800 break-words">
+                                        {texto}
+                                    </div>
+                                </div>
+                                <CopyButton text={texto} label={label} />
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
+    );
+}
+
 
 // ─── CARD DE UM PENDENTE ──────────────────────────────────────────────────────
 
@@ -167,7 +357,7 @@ function PendenteCard({
     defaultOpen: boolean;
     onDone: (id: number, acao: "publicado" | "excluido") => void;
 }) {
-    const { pend, initial, avisos } = item;
+    const { pend, initial, avisos, sugestoes } = item;
     const { form, set, isInvalid } = useEventForm(initial);
 
     const [open, setOpen] = useState(defaultOpen);
@@ -242,6 +432,12 @@ function PendenteCard({
                                 <span>{errosBackend.length + avisos.length} alerta(s)</span>
                             </span>
                         )}
+                        {sugestoes && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">
+                                <Sparkles className="w-3 h-3" />
+                                <span>SUGESTÕES</span>
+                            </span>
+                        )}
                         {isInvalid && (
                             <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
                                 INCOMPLETO
@@ -282,6 +478,9 @@ function PendenteCard({
                             </ul>
                         </div>
                     )}
+
+                    {/* SUGESTÕES DA IA (fora do fieldset: copiar continua funcionando após o POST) */}
+                    {sugestoes && <SugestoesPanel sugestoes={sugestoes} form={form} />}
 
                     {/* FORMULÁRIO (travado após o POST ou durante o envio) */}
                     <fieldset disabled={lockado} className="space-y-4 min-w-0 border-0 p-0 m-0 disabled:opacity-70">

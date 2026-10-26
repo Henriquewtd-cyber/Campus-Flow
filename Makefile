@@ -22,7 +22,7 @@ down:
 
 # APAGA os volumes e as imagens do projeto
 delete:
-	docker compose down -v --rmi all --remove-orphans
+	docker compose down --remove-orphans
 
 # Logs de todos os serviços
 logs:

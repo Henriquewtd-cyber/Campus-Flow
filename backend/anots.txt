@@ -13,4 +13,5 @@
 11 - midlleware e autho rodando. tudo no docker
 12 - fazer a rota de eventos completa - feito
 13- fazer o get slides
-14 - Fazendo a ia com n8n // feito o n8n / fazer o endpoint que recebe do n8n // adicionar tags em tudo do frontend / 
+14 - Fazendo a ia com n8n // feito o n8n / fazer o endpoint que recebe do n8n // adicionar tags em tudo do frontend /
+15 - N8n quase pronto, falta adicionar uma table de messages ids já usados 

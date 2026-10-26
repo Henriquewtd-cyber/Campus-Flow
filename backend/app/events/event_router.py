@@ -18,12 +18,12 @@ def add_evento(event: Event, current_user: dict = Depends(get_current_user)):
 def get_eventos(params: Annotated[EventQueryParams, Query()]):
     return event_service.get_eventos(params)
 
-@router.patch("/update_evento/{event_id}", response_model=EventResponse)
+@router.patch("/update_evento/", response_model=EventResponse)
 def update_evento(event_id: int, event: Event, current_user: dict = Depends(get_current_user)):
     # recebe o ID do evento e atualiza o evento correspondente, usando o event_service.
     return event_service.update_evento(event_id, event)
 
-@router.delete("/delete_evento/{event_id}", response_model=EventResponse)
+@router.delete("/delete_evento/", response_model=EventResponse)
 def delete_evento(event_id: int, current_user: dict = Depends(get_current_user)):
     # recebe o ID do evento e deleta o evento correspondente, usando o event_service.
     return event_service.delete_evento(event_id)

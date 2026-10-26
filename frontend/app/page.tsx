@@ -48,7 +48,7 @@ export default function Home() {
 
           {/* CARD 2: ADMIN MANAGEMENT */}
           <Link
-            href="/add_evento"
+            href="/novo"
             className="group bg-white p-6 rounded-xl border border-slate-200/80 shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col justify-between"
           >
             <div>

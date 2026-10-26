@@ -14,10 +14,25 @@ def n8n_add_pendent_event(event_data: EventPendentCreate):
     db = SessionLocal()
 
     try:
+        message_id = event_data.dados_brutos["messageId"]
+
+        # Verifica se já existe um evento com esse message ID
+        evento_existente = (
+            db.query(Evento_Pendente)
+            .filter(Evento_Pendente.email_id == message_id)
+            .first()
+        )
+
+        if evento_existente:
+            return {
+                "status": "success",
+                "message": f"Event with ID {evento_existente.id} already exists",
+            }
+
         event = Evento_Pendente(
             dados_brutos=event_data.dados_brutos,
             erros_validacao=[],
-            email_id=event_data.dados_brutos["messageId"],
+            email_id=message_id,
         )
 
         db.add(event)

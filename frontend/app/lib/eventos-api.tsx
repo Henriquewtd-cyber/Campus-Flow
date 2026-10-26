@@ -120,7 +120,7 @@ export const addEvento = (payload: EventPayload) =>
     request<EventResponse>("/add_evento", { method: "POST", body: JSON.stringify(payload) }, true);
 
 export const updateEvento = (id: number, payload: EventPayload) =>
-    request<EventResponse>(`/update_evento/${id}`, { method: "PATCH", body: JSON.stringify(payload) }, true);
+    request<EventResponse>(`/update_evento?event_id=${id}`, { method: "PATCH", body: JSON.stringify(payload) }, true);
 
 export const deleteEvento = (id: number) =>
-    request<EventResponse>(`/delete_evento/${id}`, { method: "DELETE" }, true);
+    request<EventResponse>(`/delete_evento?event_id=${id}`, { method: "DELETE" }, true);

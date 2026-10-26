@@ -164,3 +164,45 @@ def update_evento(event_id: int, event: Event) -> EventResponse:
 
     finally:
         db.close()
+
+
+def delete_evento(event_id: int) -> EventResponse:
+    db = SessionLocal()
+
+    try:
+        existing_event = (
+            db.query(Evento)
+            .filter(Evento.id == event_id)
+            .first()
+        )
+
+        if not existing_event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Event with ID {event_id} not found"
+            )
+
+        titulo = existing_event.titulo
+
+        db.delete(existing_event)
+        db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Event '{titulo}' deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        db.rollback()
+        print(f"Erro ao excluir evento {event_id}: {e}")
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao excluir evento"
+        )
+
+    finally:
+        db.close()

@@ -61,7 +61,7 @@ The AI never publishes anything on its own. It does the tedious part, and a pers
 | Frontend | Next.js, TypeScript, Tailwind CSS |
 | Backend | FastAPI, Pydantic |
 | Database | PostgreSQL |
-| Automation & AI | n8n, Gmail API, Gemini API (Flash) |
+| Automation & AI | n8n, Gmail API, Groq API (gpt-oss-120b) |
 | Infra | Docker, Docker Compose, Make |
 
 ## Running locally
@@ -89,3 +89,4 @@ Built by **Henrique Wagner Thomé Dias**, Computer Science student at IME-USP, a
 
 - GitHub: [Henriquewtd-cyber](https://github.com/Henriquewtd-cyber)
 - LinkedIn: [henrique-wagner](https://www.linkedin.com/in/henrique-wagner/)
+- Portfolio: [henrique-wagner](https://www.linux.ime.usp.br/~henriquewtd/)

@@ -35,8 +35,8 @@ Most announcements at IME already go out by e-mail, so instead of asking organiz
 ```mermaid
 flowchart LR
     A[Gmail] --> B[n8n]
-    B --> C[Gemini: extract event as JSON]
-    C --> D[Gemini: suggest improvements]
+    B --> C[Groq: extract event as JSON]
+    C --> D[Groq: suggest improvements]
     D --> E[FastAPI + Pydantic validation]
     E --> F[(Pending queue)]
     F --> G{Admin review}
@@ -45,7 +45,7 @@ flowchart LR
 ```
 
 1. **n8n** reads incoming e-mails through the Gmail API.
-2. A first call to **Gemini (Flash)** extracts the event into structured JSON.
+2. A first call to **Groq (gpt-oss-120b)** extracts the event into structured JSON.
 3. A second call suggests improvements to the fields (clearer titles, missing details, and so on).
 4. n8n sends the original fields and the suggestions to the **FastAPI** backend, where **Pydantic** validates the format.
 5. The event lands in a **pending queue**. An admin reviews it, using the AI suggestions or not, and approves it. Only then does it become a real event.
